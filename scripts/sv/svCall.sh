@@ -25,8 +25,4 @@ export PROJECT_OUTPUT_DIR
 
 ./scanBam.sh
 
-./assembly.sh
-
-./alignAssembly.sh
-
 ./callVariants.sh

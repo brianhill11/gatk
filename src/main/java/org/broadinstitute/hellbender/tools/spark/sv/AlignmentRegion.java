@@ -79,8 +79,15 @@ class AlignmentRegion {
     }
 
     public AlignmentRegion(final GATKRead read) {
-        this.assemblyId = DUMMY_ASM_ID;
-        this.contigId = read.getName();
+        final String readName = read.getName();
+        final int splitPos = readName.indexOf(':');
+        if ( splitPos == -1 ) {
+            this.assemblyId = DUMMY_ASM_ID;
+            this.contigId = readName;
+        } else {
+            this.assemblyId = readName.substring(0, splitPos);
+            this.contigId = readName.substring(splitPos+1);
+        }
         this.referenceInterval = new SimpleInterval(read);
         this.forwardStrand = ! read.isReverseStrand();
         this.cigarAlong5to3DirectionOfContig = forwardStrand ? read.getCigar() : CigarUtils.invertCigar(read.getCigar());

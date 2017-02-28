@@ -21,12 +21,11 @@ echo "Assuming 2-bit reference: " "$TWOBIT_REFERENCE_LOCATION"
 
 cd "$GATK_DIR" 
 
-./gatk-launch CallVariantsFromAlignedContigsSpark \
-    --inputAlignments "$PROJECT_OUTPUT_DIR"/aligned_assemblies \
-    --inputAssemblies "$PROJECT_OUTPUT_DIR"/assembly_0 \
+./gatk-launch CallVariantsFromAlignedContigsSAMSpark \
+    -I "$PROJECT_OUTPUT_DIR"/aligned_assembly_contigs.sam \
     --outputPath "$PROJECT_OUTPUT_DIR"/variants \
     -R "$TWOBIT_REFERENCE_LOCATION" \
-    -fastaReference "$REFERENCE_LOCATION" \
+    --fastaReference "$REFERENCE_LOCATION" \
     -- \
     --sparkRunner GCS \
     --cluster "$CLUSTER_NAME" \
