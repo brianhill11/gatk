@@ -50,6 +50,9 @@ repositories {
     maven {
         url "https://artifactory.broadinstitute.org/artifactory/libs-snapshot/" //for htsjdk snapshots
     }
+    maven {
+        url "http://support.falcon-computing.com/mvn-repo"
+    }
 
     mavenLocal()
 
@@ -181,6 +184,8 @@ dependencies {
     }
 
     compile 'org.broadinstitute:gatk-bwamem-jni:1.0.0-rc1-SNAPSHOT'
+
+    compile 'org.apache.spark:blaze_2.10:1.0'
 
     //needed for DataflowAssert
     testCompile 'org.hamcrest:hamcrest-all:1.3'

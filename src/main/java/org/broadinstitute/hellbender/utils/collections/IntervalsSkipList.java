@@ -15,7 +15,8 @@ import java.util.*;
 public final class IntervalsSkipList<T extends Locatable> implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private final Map<String, IntervalsSkipListOneContig<T>> intervals;
+    //    public final Map<String, IntervalsSkipListOneContig<T>> intervals;
+    public final Map<String, IntervalsSkipListOneContig<T>> intervals;
 
     /**
      * Creates an IntervalsSkipList that holds a copy of the given intervals, sorted
