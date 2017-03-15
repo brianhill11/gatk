@@ -46,11 +46,11 @@ public final class BroadcastJoinReadsWithVariants {
         final Map<String, Integer> contig_index_map = new HashMap<>();
         // for each Contig in InvervalSkipList
         for (String key : variantSkipList.intervals.keySet()) {
-            final IntervalsSkipListOneContig contig_intervals = variantSkipList.intervals.get(key);
+            final IntervalsSkipListOneContig<GATKVariant> contig_intervals = variantSkipList.intervals.get(key);
 
             // for each sorted start/end pair in IntervalSkipListOneContig
             for (int j = 0; j < contig_intervals.vs.size(); j++) {
-                final SimpleInterval contig_interval = ((SimpleInterval)contig_intervals.vs.get(j));
+                final GATKVariant contig_interval = contig_intervals.vs.get(j);
                 final Integer contig_interval_start = contig_interval.getStart();
                 final Integer contig_interval_end = contig_interval.getEnd();
                 variant_start_end.add(contig_interval_start);
