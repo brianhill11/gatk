@@ -185,7 +185,9 @@ dependencies {
 
     compile 'org.broadinstitute:gatk-bwamem-jni:1.0.0-rc1-SNAPSHOT'
 
-    compile 'org.apache.spark:blaze_2.10:1.0'
+    compile('org.apache.spark:blaze_2.10:1.0') {
+        exclude group: 'org.apache.spark', module: 'spark-core_2.10'
+    }
 
     //needed for DataflowAssert
     testCompile 'org.hamcrest:hamcrest-all:1.3'

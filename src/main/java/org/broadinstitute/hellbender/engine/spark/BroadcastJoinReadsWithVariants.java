@@ -57,8 +57,18 @@ public final class BroadcastJoinReadsWithVariants {
                 variant_start_end.add(contig_interval_end);
             }
 
-            for (int j = 0; j < contig_intervals.reachLength; j++) {
-                reach.add(contig_intervals.reach[i]);
+
+            if (contig_intervals.reach.length != contig_intervals.reachLength) {
+                System.err.println("WARNING: contig_intervals.reach.length != contig_intervals.reachLength");
+                System.err.println("contig_interavls.reach.length:" + contig_intervals.reach.length + "\t contig_intervals.reachLength:" + contig_intervals.reachLength);
+            }
+            if (contig_intervals.reach.length > 0) {
+                System.err.println("contig_interavls.reach.length: " + contig_intervals.reach.length);
+                for (int j = 0; j < contig_intervals.reach.length; j++) {
+                    reach.add(contig_intervals.reach[j]);
+                }
+            } else {
+                System.err.println("ERROR: contig_intervals.reach.length is zero!");
             }
             reachLength.add(contig_intervals.reachLength);
             shift.add(contig_intervals.shift);
