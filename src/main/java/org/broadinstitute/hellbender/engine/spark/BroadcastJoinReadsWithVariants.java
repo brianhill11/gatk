@@ -1,18 +1,29 @@
 package org.broadinstitute.hellbender.engine.spark;
 
+import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.internal.Logging;
+
 import org.apache.spark.broadcast.Broadcast;
 import org.broadinstitute.hellbender.utils.collections.IntervalsSkipList;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.collections.IntervalsSkipListOneContig;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.variant.GATKVariant;
-import scala.Tuple2;
-import scala.Tuple3;
+import scala.*;
 
+import java.lang.reflect.*;
 import java.util.*;
+
+import org.apache.spark.blaze.*;
+import scala.Array;
+import scala.collection.mutable.ArrayBuffer;
+import scala.reflect.ClassManifestFactory;
+import scala.reflect.ClassTag;
+import scala.reflect.ClassTag$;
 
 /**
  * Joins an RDD of GATKReads to variant data using a broadcast strategy.
@@ -28,6 +39,9 @@ public final class BroadcastJoinReadsWithVariants {
         final IntervalsSkipList<GATKVariant> variantSkipList = new IntervalsSkipList<>(variants.collect());
         final Broadcast<IntervalsSkipList<GATKVariant>> variantsBroadcast = ctx.broadcast(variantSkipList);
 
+        // get Blaze
+        final SparkContext sparkCtx = reads.context();
+        final BlazeRuntime accel = new BlazeRuntime(sparkCtx);
         //
         // Create Broadcast data to be cached on accelerator
         //
@@ -48,6 +62,7 @@ public final class BroadcastJoinReadsWithVariants {
         for (String key : variantSkipList.intervals.keySet()) {
             final IntervalsSkipListOneContig<GATKVariant> contig_intervals = variantSkipList.intervals.get(key);
 
+            System.err.println("Contig: " + contig_intervals.contig);
             // for each sorted start/end pair in IntervalSkipListOneContig
             for (int j = 0; j < contig_intervals.vs.size(); j++) {
                 final GATKVariant contig_interval = contig_intervals.vs.get(j);
@@ -79,19 +94,22 @@ public final class BroadcastJoinReadsWithVariants {
             i = i + 1;
         }
 
-        // create hash set holding unique contig values, in order of insertion
-//        final Set<String> contig_index_mapping_set = new Set<String>;
-//        contig_index_mapping_set.addAll(reads.map(r -> {return r.getContig()}).collect());
-//        final List<String> contig_index_mapping = new ArrayList<String>(contig_index_mapping_set);
+        // wrap all Broadcast variables with
+/*        final ClassTag<List<Integer>> integer_list_classtag = ClassTag$.MODULE$.apply(List.class);
+        final BlazeBroadcast variant_start_end_bc = accel.wrap(ctx.broadcast(variant_start_end), integer_list_classtag);
+        final BlazeBroadcast reach_bc = accel.wrap(ctx.broadcast(reach), integer_list_classtag);
+        final BlazeBroadcast reachLength_bc = accel.wrap(ctx.broadcast(reachLength), integer_list_classtag);
+        final BlazeBroadcast shift_bc = accel.wrap(ctx.broadcast(shift), integer_list_classtag);
+        final BlazeBroadcast vs_size_bc = accel.wrap(ctx.broadcast(vs_size), integer_list_classtag);*/
 
-
+        final ArrayList<Integer> init_query_array = new ArrayList<>();
 
         //
         // Create Int array for input data
         //
-        final JavaRDD<Tuple3<Integer, Integer, Integer>> start_end_list = reads.map(r -> {
+        final JavaPairRDD<Integer, Tuple2<Integer, Integer>> start_end_list = reads.mapToPair(r -> {
             if (SimpleInterval.isValid(r.getContig(), r.getStart(), r.getEnd())) {
-                return new Tuple3<>(contig_index_map.get(r.getContig()), r.getStart(), r.getEnd());
+                return new Tuple2<>(contig_index_map.get(r.getContig()), new Tuple2<Integer, Integer>(r.getStart(), r.getEnd()));
             } else {
                 //Sometimes we have reads that do not form valid intervals (reads that do not consume any ref bases, eg CIGAR 61S90I
                 //In those cases, we'll just say that nothing overlaps the read
@@ -99,19 +117,44 @@ public final class BroadcastJoinReadsWithVariants {
             }
         });
 
-        // input array for accelerator
-        final List<Integer> contig_start_end = new ArrayList<>();
-        // collect all of the query tuples
-        final List<Tuple3<Integer, Integer, Integer>> query_list = start_end_list.collect();
-        // for each query tuple, unpack and add to Int array
-        for (Tuple3<Integer, Integer, Integer> query : query_list) {
-            // add contig
-            contig_start_end.add(query._1());
-            // add query start location
-            contig_start_end.add(query._2());
-            // add query end location
-            contig_start_end.add(query._3());
-        }
+        Function2<ArrayList<Integer>, Tuple2<Integer, Integer>, ArrayList<Integer>> combine_pos = new Function2<ArrayList<Integer>, Tuple2<Integer, Integer>, ArrayList<Integer>>() {
+            @Override
+            public ArrayList<Integer> call(ArrayList<Integer> in1, Tuple2<Integer, Integer> in2) {
+                // add start position
+                in1.add(in2._1());
+                // add end position
+                in1.add(in2._2());
+                return in1;
+            }
+        };
+
+        Function2<ArrayList<Integer>, ArrayList<Integer>, ArrayList<Integer>> merge_pos_arrays = new Function2<ArrayList<Integer>, ArrayList<Integer>, ArrayList<Integer>>() {
+            @Override
+            public ArrayList<Integer> call(ArrayList<Integer> in1, ArrayList<Integer> in2) {
+                in1.addAll(in2);
+                return in1;
+            }
+        };
+        
+        JavaPairRDD<Integer, ArrayList<Integer>> query_array = start_end_list.aggregateByKey(
+                init_query_array,
+                combine_pos,
+                merge_pos_arrays
+        );
+
+/*        final List<Integer> b = accel.wrap(query_array).map_acc(new GetOverlappingAcc(
+                variant_start_end_bc,
+                reach_bc,
+                reachLength_bc,
+                shift_bc,
+                vs_size_bc)
+        ).collect();*/
+
+        System.err.println("query_array:");
+        System.err.println(query_array);
+        System.err.println("query_array countByKey:" + query_array.countByKey());
+        System.err.println("result:");
+        //System.err.println(b);
 
 
         return reads.mapToPair(r -> {
