@@ -95,12 +95,13 @@ public final class BroadcastJoinReadsWithVariants {
         }
 
         // wrap all Broadcast variables with
-/*        final ClassTag<List<Integer>> integer_list_classtag = ClassTag$.MODULE$.apply(List.class);
-        final BlazeBroadcast variant_start_end_bc = accel.wrap(ctx.broadcast(variant_start_end), integer_list_classtag);
-        final BlazeBroadcast reach_bc = accel.wrap(ctx.broadcast(reach), integer_list_classtag);
-        final BlazeBroadcast reachLength_bc = accel.wrap(ctx.broadcast(reachLength), integer_list_classtag);
-        final BlazeBroadcast shift_bc = accel.wrap(ctx.broadcast(shift), integer_list_classtag);
-        final BlazeBroadcast vs_size_bc = accel.wrap(ctx.broadcast(vs_size), integer_list_classtag);*/
+        final ClassTag<Object[]> integer_list_classtag = ClassTag$.MODULE$.apply(variant_start_end.toArray().getClass());
+
+        final BlazeBroadcast<Object[]> variant_start_end_bc = accel.wrap(ctx.broadcast(variant_start_end.toArray()), integer_list_classtag);
+        final BlazeBroadcast<Object[]> reach_bc = accel.wrap(ctx.broadcast(reach.toArray()), integer_list_classtag);
+        final BlazeBroadcast<Object[]> reachLength_bc = accel.wrap(ctx.broadcast(reachLength.toArray()), integer_list_classtag);
+        final BlazeBroadcast<Object[]> shift_bc = accel.wrap(ctx.broadcast(shift.toArray()), integer_list_classtag);
+        final BlazeBroadcast<Object[]> vs_size_bc = accel.wrap(ctx.broadcast(vs_size.toArray()), integer_list_classtag);
 
         final ArrayList<Integer> init_query_array = new ArrayList<>();
 
@@ -135,23 +136,24 @@ public final class BroadcastJoinReadsWithVariants {
                 return in1;
             }
         };
-        
+
         JavaPairRDD<Integer, ArrayList<Integer>> query_array = start_end_list.aggregateByKey(
                 init_query_array,
                 combine_pos,
                 merge_pos_arrays
         );
-
-/*        final List<Integer> b = accel.wrap(query_array).map_acc(new GetOverlappingAcc(
+/*
+/       final List<Integer> b = accel.wrap(query_array).map_acc(new GetOverlappingAcc(
                 variant_start_end_bc,
                 reach_bc,
                 reachLength_bc,
                 shift_bc,
                 vs_size_bc)
-        ).collect();*/
+        ).collect();
+*/
 
         System.err.println("query_array:");
-        System.err.println(query_array);
+        System.err.println(query_array.collect());
         System.err.println("query_array countByKey:" + query_array.countByKey());
         System.err.println("result:");
         //System.err.println(b);

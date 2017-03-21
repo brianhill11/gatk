@@ -14,11 +14,11 @@ import org.broadinstitute.hellbender.utils.variant.GATKVariant
 
  */
 
-class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Integer]],
-                        reach: BlazeBroadcast[Array[Integer]],
-                        reachLength: BlazeBroadcast[Array[Integer]],
-                        shift: BlazeBroadcast[Array[Integer]],
-                        vs_size: BlazeBroadcast[Array[Integer]])
+class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Object]],
+                        reach: BlazeBroadcast[Array[Object]],
+                        reachLength: BlazeBroadcast[Array[Object]],
+                        shift: BlazeBroadcast[Array[Object]],
+                        vs_size: BlazeBroadcast[Array[Object]])
   extends Accelerator[Array[Integer], Array[Integer]] {
 
   // Accelerator ID string
@@ -26,11 +26,11 @@ class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Integer]],
 
   override def getArgNum() = 5
 
-  override def getArg(idx: Int): Option[_] = if (idx == 0) Some(start_end)
-  else if (idx == 1) Some(reach)
-  else if (idx == 2) Some(reachLength)
-  else if (idx == 3) Some(shift)
-  else if (idx == 4) Some(vs_size)
+  override def getArg(idx: Int): Option[_] = if (idx == 0) Some(start_end.asInstanceOf[BlazeBroadcast[Array[Int]]])
+  else if (idx == 1) Some(reach.asInstanceOf[BlazeBroadcast[Array[Int]]])
+  else if (idx == 2) Some(reachLength.asInstanceOf[BlazeBroadcast[Array[Int]]])
+  else if (idx == 3) Some(shift.asInstanceOf[BlazeBroadcast[Array[Int]]])
+  else if (idx == 4) Some(vs_size.asInstanceOf[BlazeBroadcast[Array[Int]]])
   else None
   /* The input to the function is an array of tuples representing
    * (query_contig_idx, query_start, query_end)
@@ -94,12 +94,12 @@ class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Integer]],
 
       // need to add to index so that it falls within this contig
       // by adding farthest index of prev contig
-      if (query_contig > 0) idx += vs_size.data(query_contig - 1)
+      if (query_contig > 0) idx += vs_size.data(query_contig - 1).asInstanceOf[Int]
 
       // [idx, contig_size) increment by 2 every time
-      for (i <- idx until vs_size.data(query_contig) by 2 ) {
-        val other_start = start_end.data(i)
-        val other_end = start_end.data(i + 1)
+      for (i <- idx until vs_size.data(query_contig).asInstanceOf[Int] by 2 ) {
+        val other_start = start_end.data(i).asInstanceOf[Int]
+        val other_end = start_end.data(i + 1).asInstanceOf[Int]
         // they are sorted by start location, so if this one starts too late
         // then all of the others will, too.
         if (other_start > query_end) break
@@ -120,13 +120,13 @@ class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Integer]],
      * @returns index of bin
      */
     def firstPotentiallyReaching(position: Int, contig_idx: Int) : Int = {
-      val contig_reach_length = reachLength.data(contig_idx)
+      val contig_reach_length = reachLength.data(contig_idx).asInstanceOf[Int]
       // [0, contig_reach_length)
       for (i <- 0 until contig_reach_length) {
-        if (reach.data(contig_reach_length + i) >= position) return i << shift.data(contig_idx)
+        if (reach.data(contig_reach_length + i).asInstanceOf[Int] >= position) return i << shift.data(contig_idx).asInstanceOf[Int]
       }
       // no one reaches to the given position.
-      return vs_size.data(contig_idx) - 1
+      return vs_size.data(contig_idx).asInstanceOf[Int] - 1
     }
     result_array.toArray
   }
