@@ -201,7 +201,15 @@ public final class BroadcastJoinReadsWithVariants {
         try {
             PrintWriter writer = new PrintWriter("/tmp/hill/overlapping_dump.txt", "UTF-8");
 
-            t.collect().forEach(r -> writer.println(r._1().getContig() + "," + r._1().getStart() + "," + r._1().getEnd() + ";" + r._2().toString()));
+            t.collect().forEach(r -> {
+                String var_intervals = "";
+                Iterator<GATKVariant> iter = r._2().iterator();
+                while (iter.hasNext()) {
+                    GATKVariant variant = iter.next();
+                    var_intervals += variant.getStart() + "," + variant.getEnd() + "|";
+                }
+                writer.println(r._1().getContig() + "," + r._1().getStart() + "," + r._1().getEnd() + ";" + var_intervals);
+            });
 
             writer.close();
         } catch (IOException e) {
