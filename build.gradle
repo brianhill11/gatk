@@ -187,6 +187,8 @@ dependencies {
 
     compile('org.apache.spark:blaze_2.10:1.0') {
         exclude group: 'org.apache.spark', module: 'spark-core_2.10'
+        exclude group: 'org.apache.logging', module: 'log4j'
+        exclude group: 'org.slf4j'
     }
 
     //needed for DataflowAssert
