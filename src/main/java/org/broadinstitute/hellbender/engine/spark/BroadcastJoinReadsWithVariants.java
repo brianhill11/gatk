@@ -15,7 +15,13 @@ import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.variant.GATKVariant;
 import scala.*;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.*;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import org.apache.spark.blaze.*;
@@ -92,6 +98,24 @@ public final class BroadcastJoinReadsWithVariants {
             // create contig -> index mapping
             contig_index_map.put(key, i);
             i = i + 1;
+        }
+
+        System.err.println("Dumping IntervalSkipList data...");
+        try {
+            PrintWriter writer = new PrintWriter("/tmp/hill/intervalSkipList_dump.txt", "UTF-8");
+            writer.println("variant_start_end");
+            writer.println(variant_start_end.toString());
+            writer.println("reach");
+            writer.println(reach.toString());
+            writer.println("reachLength");
+            writer.println(reachLength.toString());
+            writer.println("shift");
+            writer.println(shift.toString());
+            writer.println("vs_size");
+            writer.println(vs_size.toString());
+
+            writer.close();
+        } catch (IOException e) {
         }
 
         // wrap all Broadcast variables with
