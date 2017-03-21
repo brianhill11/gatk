@@ -119,6 +119,7 @@ public final class BroadcastJoinReadsWithVariants {
         });
 
         Function2<ArrayList<Integer>, Tuple2<Integer, Integer>, ArrayList<Integer>> combine_pos = new Function2<ArrayList<Integer>, Tuple2<Integer, Integer>, ArrayList<Integer>>() {
+            private static final long serialVersionUID = 1L;
             @Override
             public ArrayList<Integer> call(ArrayList<Integer> in1, Tuple2<Integer, Integer> in2) {
                 // add start position
@@ -130,6 +131,7 @@ public final class BroadcastJoinReadsWithVariants {
         };
 
         Function2<ArrayList<Integer>, ArrayList<Integer>, ArrayList<Integer>> merge_pos_arrays = new Function2<ArrayList<Integer>, ArrayList<Integer>, ArrayList<Integer>>() {
+            private static final long serialVersionUID = 1L;
             @Override
             public ArrayList<Integer> call(ArrayList<Integer> in1, ArrayList<Integer> in2) {
                 in1.addAll(in2);
