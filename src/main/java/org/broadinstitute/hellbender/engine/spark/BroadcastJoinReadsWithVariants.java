@@ -184,10 +184,32 @@ public final class BroadcastJoinReadsWithVariants {
         System.err.println("result:");
         //System.err.println(b);
 
+        System.err.println("Dumping Overlap data...");
+        try {
+            PrintWriter writer = new PrintWriter("/tmp/hill/overlapping_dump.txt", "UTF-8");
+
+            reads.mapToPair(r -> {
+                final IntervalsSkipList<GATKVariant> intervalsSkipList = variantsBroadcast.getValue();
+                if (SimpleInterval.isValid(r.getContig(), r.getStart(), r.getEnd())) {
+                    final List<GATKVariant> isl = intervalsSkipList.getOverlapping(new SimpleInterval(r));
+                    writer.println(r.getContig() + "," + r.getStart() + "," + r.getEnd() + ";" + isl.toString());
+                    return new Tuple2<>(r, intervalsSkipList.getOverlapping(new SimpleInterval(r)));
+                } else {
+                    //Sometimes we have reads that do not form valid intervals (reads that do not consume any ref bases, eg CIGAR 61S90I
+                    //In those cases, we'll just say that nothing overlaps the read
+                    return new Tuple2<>(r, Collections.emptyList());
+                }
+            });
+
+            writer.close();
+        } catch (IOException e) {
+        }
 
         return reads.mapToPair(r -> {
             final IntervalsSkipList<GATKVariant> intervalsSkipList = variantsBroadcast.getValue();
             if (SimpleInterval.isValid(r.getContig(), r.getStart(), r.getEnd())) {
+                final List<GATKVariant> isl = intervalsSkipList.getOverlapping(new SimpleInterval(r));
+
                 return new Tuple2<>(r, intervalsSkipList.getOverlapping(new SimpleInterval(r)));
             } else {
                 //Sometimes we have reads that do not form valid intervals (reads that do not consume any ref bases, eg CIGAR 61S90I
