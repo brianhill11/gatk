@@ -6,6 +6,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.internal.Logging;
+import org.apache.spark.rdd.RDD;
 
 import org.apache.spark.broadcast.Broadcast;
 import org.broadinstitute.hellbender.utils.collections.IntervalsSkipList;
@@ -142,6 +143,10 @@ public final class BroadcastJoinReadsWithVariants {
             }
         });
 
+        start_end_list.cache();
+        System.err.println("start_end_list count:" + start_end_list.count());
+        System.err.println("start_end_list num_partitions:" + start_end_list.getNumPartitions());
+
         Function2<ArrayList<Integer>, Tuple2<Integer, Integer>, ArrayList<Integer>> combine_pos = new Function2<ArrayList<Integer>, Tuple2<Integer, Integer>, ArrayList<Integer>>() {
             private static final long serialVersionUID = 1L;
             @Override
@@ -170,48 +175,59 @@ public final class BroadcastJoinReadsWithVariants {
                 merge_pos_arrays
         );
 
+        contig_query_arrays.cache();
+        System.err.println("contig_query_arrays count:" + contig_query_arrays.count());
+        System.err.println("contig_query_arrays num_partitions:" + contig_query_arrays.getNumPartitions());
+        contig_query_arrays.unpersist();
+        start_end_list.unpersist();
+
         // for each contig, create batches of queries where the first value in the batch array
         // is the contig value, and then queries follow in start/end alternating order
         // ex: [contig_id, start1, end1, start2, end2, start3, end3, ..., startN, endN]
         // where N is the batch size
-        JavaRDD<ArrayList<Integer>> packed_query_arrays = contig_query_arrays.flatMap(k -> {
-            // batch size : number of query pairs in each array
-            final int batch_size = 100;
-            //
-            final Integer contig_id = k._1();
-            final ArrayList<Integer> queries = k._2();
-            ArrayList<ArrayList<Integer>> query_batches = new ArrayList<>();
-            final int num_batches = (int)Math.ceil(queries.size() / batch_size);
-            for (int b = 0; b < num_batches; b++) {
-                // for each batch, create new array to hold batch data
-                final ArrayList<Integer> query_batch = new ArrayList<>();
-                // add contig_id to head of list
-                query_batch.add(contig_id);
-                // grab batch_size elements and add to query_batch
-                query_batch.addAll(queries.subList(b*batch_size, (b+1)*batch_size));
-                // add batch to list of batches
-                query_batches.add(query_batch);
-            }
-            return query_batches.iterator();
-        });
+//        RDD<Integer[]> packed_query_arrays = contig_query_arrays.flatMap(k -> {
+//            // batch size : number of query pairs in each array
+//            final int batch_size = 100;
+//            //
+//            final Integer contig_id = k._1();
+//            final ArrayList<Integer> queries = k._2();
+//
+//            final int num_batches = (int)Math.ceil(queries.size() / batch_size);
+//            Integer[][] query_batches = new Integer[num_batches][batch_size + 1];
+//            for (int b = 0; b < num_batches; b++) {
+//                // for each batch, create new array to hold batch data
+//                Integer[] query_batch = new Integer[batch_size + 1];
+//                // add contig_id to head of list
+//                query_batch[0] = contig_id;
+//                // grab batch_size elements and add to query_batch
+//                for (int q = 1; q <= batch_size; q++) {
+//                    query_batch[q] = queries.get(b*batch_size + q-1);
+//                }
+//                //query_batch.addAll(queries.subList(b*batch_size, (b+1)*batch_size));
+//                // add batch to list of batches
+//                //query_batches.add(query_batch);
+//                query_batches[b] = query_batch;
+//            }
+//            return query_batches;
+//        });
 
 
 
 
 
-/*
-/       final List<Integer> b = accel.wrap(packed_query_arrays).map_acc(new GetOverlappingAcc(
-                variant_start_end_bc,
-                reach_bc,
-                reachLength_bc,
-                shift_bc,
-                vs_size_bc)
-        ).collect();
-*/
 
-        System.err.println("packed_query_arrays:");
-        System.err.println(packed_query_arrays.collect());
-        System.err.println("num packed_query_arrays:" + packed_query_arrays.count());
+//       final List<Integer> b = accel.wrap(packed_query_arrays).map_acc(new GetOverlappingAcc(
+//                variant_start_end_bc,
+//                reach_bc,
+//                reachLength_bc,
+//                shift_bc,
+//                vs_size_bc)
+//        ).collect();
+
+
+//        System.err.println("packed_query_arrays:");
+//        System.err.println(packed_query_arrays.collect());
+//        System.err.println("num packed_query_arrays:" + packed_query_arrays.count());
         //System.err.println("query_array countByKey:" + contig_query_arrays.countByKey());
         //System.err.println("result:");
         //System.err.println(b);
