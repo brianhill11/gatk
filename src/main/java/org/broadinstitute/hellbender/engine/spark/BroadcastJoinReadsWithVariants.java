@@ -188,7 +188,7 @@ public final class BroadcastJoinReadsWithVariants {
                 // add contig_id to head of list
                 query_batch.add(contig_id);
                 // grab batch_size elements and add to query_batch
-                query_batch.addAll(queries.subList(b*batch_size, (b+1)*batch_size-1));
+                query_batch.addAll(queries.subList(b*batch_size, (b+1)*batch_size));
                 // add batch to list of batches
                 query_batches.add(query_batch);
             }
@@ -211,6 +211,7 @@ public final class BroadcastJoinReadsWithVariants {
 
         System.err.println("packed_query_arrays:");
         System.err.println(packed_query_arrays.collect());
+        System.err.println("num packed_query_arrays:" + packed_query_arrays.count());
         //System.err.println("query_array countByKey:" + contig_query_arrays.countByKey());
         //System.err.println("result:");
         //System.err.println(b);
