@@ -163,13 +163,44 @@ public final class BroadcastJoinReadsWithVariants {
             }
         };
 
-        JavaPairRDD<Integer, ArrayList<Integer>> query_array = start_end_list.aggregateByKey(
+        // group by Contig
+        JavaPairRDD<Integer, ArrayList<Integer>> contig_query_arrays = start_end_list.aggregateByKey(
                 init_query_array,
                 combine_pos,
                 merge_pos_arrays
         );
+
+        // for each contig, create batches of queries where the first value in the batch array
+        // is the contig value, and then queries follow in start/end alternating order
+        // ex: [contig_id, start1, end1, start2, end2, start3, end3, ..., startN, endN]
+        // where N is the batch size
+        JavaRDD<ArrayList<Integer>> packed_query_arrays = contig_query_arrays.flatMap(k -> {
+            // batch size : number of query pairs in each array
+            final int batch_size = 100;
+            //
+            final Integer contig_id = k._1();
+            final ArrayList<Integer> queries = k._2();
+            ArrayList<ArrayList<Integer>> query_batches = new ArrayList<>();
+            final int num_batches = (int)Math.ceil(queries.size() / batch_size);
+            for (int b = 0; b < num_batches; b++) {
+                // for each batch, create new array to hold batch data
+                final ArrayList<Integer> query_batch = new ArrayList<>();
+                // add contig_id to head of list
+                query_batch.add(contig_id);
+                // grab batch_size elements and add to query_batch
+                query_batch.addAll(queries.subList(b*batch_size, (b+1)*batch_size-1));
+                // add batch to list of batches
+                query_batches.add(query_batch);
+            }
+            return query_batches.iterator();
+        });
+
+
+
+
+
 /*
-/       final List<Integer> b = accel.wrap(query_array).map_acc(new GetOverlappingAcc(
+/       final List<Integer> b = accel.wrap(packed_query_arrays).map_acc(new GetOverlappingAcc(
                 variant_start_end_bc,
                 reach_bc,
                 reachLength_bc,
@@ -178,10 +209,10 @@ public final class BroadcastJoinReadsWithVariants {
         ).collect();
 */
 
-        System.err.println("query_array:");
-        System.err.println(query_array.collect());
-        System.err.println("query_array countByKey:" + query_array.countByKey());
-        System.err.println("result:");
+        System.err.println("packed_query_arrays:");
+        System.err.println(packed_query_arrays.collect());
+        //System.err.println("query_array countByKey:" + contig_query_arrays.countByKey());
+        //System.err.println("result:");
         //System.err.println(b);
 
 
