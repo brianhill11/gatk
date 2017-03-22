@@ -144,7 +144,8 @@ public final class BroadcastJoinReadsWithVariants {
         });
 
         start_end_list.cache();
-        System.err.println("start_end_list count:" + start_end_list.count());
+        final long num_queries = start_end_list.count();
+        System.err.println("start_end_list count:" + num_queries);
         System.err.println("start_end_list num_partitions:" + start_end_list.getNumPartitions());
 
         Function2<ArrayList<Integer>, Tuple2<Integer, Integer>, ArrayList<Integer>> combine_pos = new Function2<ArrayList<Integer>, Tuple2<Integer, Integer>, ArrayList<Integer>>() {
@@ -168,9 +169,12 @@ public final class BroadcastJoinReadsWithVariants {
             }
         };
 
+        final int batch_size = 100;
+        final int num_batches = (int)(num_queries / batch_size);
         // group by Contig
         JavaPairRDD<Integer, ArrayList<Integer>> contig_query_arrays = start_end_list.aggregateByKey(
                 init_query_array,
+                num_batches,
                 combine_pos,
                 merge_pos_arrays
         );
