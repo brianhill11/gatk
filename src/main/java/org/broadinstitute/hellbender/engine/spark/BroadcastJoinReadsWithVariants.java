@@ -192,7 +192,12 @@ public final class BroadcastJoinReadsWithVariants {
             // batch size : number of query pairs in each array
             final int batch_size = 100;
             //
-            final Integer contig_id = k._1();
+            int contig_id;
+            if (k._1() != null) {
+                contig_id = k._1();
+            } else {
+                contig_id = 0;
+            }
             final ArrayList<Integer> queries = k._2();
 
             final int num_batches = (int)Math.ceil(queries.size() / batch_size);
