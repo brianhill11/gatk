@@ -14,6 +14,7 @@ import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.collections.IntervalsSkipListOneContig;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.variant.GATKVariant;
+
 import scala.*;
 
 import java.io.IOException;
@@ -218,14 +219,17 @@ public final class BroadcastJoinReadsWithVariants {
         System.err.println(packed_query_arrays.take(5));
 
         final ClassTag<Integer[]> integer_array_classtag = ClassTag$.MODULE$.apply(Integer[].class);
-       final int[][] b = accel.wrap(packed_query_arrays.rdd(), int_array_classtag).map_acc(new GetOverlappingAcc(
+       final AccRDD<int[], int[]> b = accel.wrap(packed_query_arrays.rdd(), int_array_classtag).map_acc(new GetOverlappingAcc(
                 variant_start_end_bc,
                 reach_bc,
                 reachLength_bc,
                 shift_bc,
                 vs_size_bc),
                int_array_classtag
-        ).collect();
+        );
+
+       System.err.println("Collecting AccRDD");
+       System.err.println(b.collect());
 
 
 //        System.err.println("packed_query_arrays:");
