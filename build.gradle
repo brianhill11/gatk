@@ -7,6 +7,9 @@ buildscript {
      }
 }
 
+// added: use scala plugin to compile scala code
+apply plugin: 'scala'
+
 plugins {
     id "java"
     id "application"
