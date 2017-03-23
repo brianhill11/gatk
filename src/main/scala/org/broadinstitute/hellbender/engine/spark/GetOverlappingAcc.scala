@@ -59,6 +59,7 @@ class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Int]],
    */
   override def call(in: Array[Int]) : Array[Int] = {
 
+    println("Running Accel code on CPU with input array of size" + in.length)
     val num_inputs = in.length / 3
     val result_array = ArrayBuffer.empty[Int]
     // iterate over each query Tuple3
@@ -84,6 +85,7 @@ class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Int]],
      */
     def getOverlapping(query_contig: Int, query_start: Int, query_end: Int) = {
 
+      println("calling getOverlapping with contig:" + query_contig +  " start: " + query_start + " end: " + query_end)
       // append start/end pairs to array
       val output_arr = ArrayBuffer.empty[Int]
 
