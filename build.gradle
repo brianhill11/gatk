@@ -7,10 +7,8 @@ buildscript {
      }
 }
 
-// added: use scala plugin to compile scala code
-apply plugin: 'scala'
-
 plugins {
+    id 'scala'
     id "java"
     id "application"
     id 'maven'
@@ -22,6 +20,9 @@ plugins {
     id "com.github.ben-manes.versions" version "0.12.0" //used for identifying dependencies that need updating
     id 'com.palantir.git-version' version '0.5.1' //version helper
 }
+
+sourceSets.main.scala.srcDir "src/main/java"
+sourceSets.main.java.srcDirs = []
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import de.undercouch.gradle.tasks.download.Download
