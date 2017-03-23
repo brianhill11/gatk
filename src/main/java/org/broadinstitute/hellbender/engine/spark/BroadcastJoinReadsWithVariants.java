@@ -120,13 +120,13 @@ public final class BroadcastJoinReadsWithVariants {
         }
 
         // wrap all Broadcast variables with
-        final ClassTag<Object[]> integer_list_classtag = ClassTag$.MODULE$.apply(variant_start_end.toArray().getClass());
+        final ClassTag<int[]> int_array_classtag = ClassTag$.MODULE$.apply(int[].class);
 
-        final BlazeBroadcast<Object[]> variant_start_end_bc = accel.wrap(ctx.broadcast(variant_start_end.toArray()), integer_list_classtag);
-        final BlazeBroadcast<Object[]> reach_bc = accel.wrap(ctx.broadcast(reach.toArray()), integer_list_classtag);
-        final BlazeBroadcast<Object[]> reachLength_bc = accel.wrap(ctx.broadcast(reachLength.toArray()), integer_list_classtag);
-        final BlazeBroadcast<Object[]> shift_bc = accel.wrap(ctx.broadcast(shift.toArray()), integer_list_classtag);
-        final BlazeBroadcast<Object[]> vs_size_bc = accel.wrap(ctx.broadcast(vs_size.toArray()), integer_list_classtag);
+        final BlazeBroadcast<int[]> variant_start_end_bc = accel.wrap(ctx.broadcast(variant_start_end.stream().mapToInt(m -> m).toArray()), int_array_classtag);
+        final BlazeBroadcast<int[]> reach_bc = accel.wrap(ctx.broadcast(reach.stream().mapToInt(m -> m).toArray()), int_array_classtag);
+        final BlazeBroadcast<int[]> reachLength_bc = accel.wrap(ctx.broadcast(reachLength.stream().mapToInt(m -> m).toArray()), int_array_classtag);
+        final BlazeBroadcast<int[]> shift_bc = accel.wrap(ctx.broadcast(shift.stream().mapToInt(m -> m).toArray()), int_array_classtag);
+        final BlazeBroadcast<int[]> vs_size_bc = accel.wrap(ctx.broadcast(vs_size.stream().mapToInt(m -> m).toArray()), int_array_classtag);
 
         final ArrayList<Integer> init_query_array = new ArrayList<>();
 
@@ -169,12 +169,10 @@ public final class BroadcastJoinReadsWithVariants {
             }
         };
 
-        final int batch_size = 100;
-        final int num_batches = (int)(num_queries / batch_size);
+
         // group by Contig
         JavaPairRDD<Integer, ArrayList<Integer>> contig_query_arrays = start_end_list.aggregateByKey(
                 init_query_array,
-                num_batches,
                 combine_pos,
                 merge_pos_arrays
         );
@@ -189,44 +187,45 @@ public final class BroadcastJoinReadsWithVariants {
         // is the contig value, and then queries follow in start/end alternating order
         // ex: [contig_id, start1, end1, start2, end2, start3, end3, ..., startN, endN]
         // where N is the batch size
-//        RDD<Integer[]> packed_query_arrays = contig_query_arrays.flatMap(k -> {
-//            // batch size : number of query pairs in each array
-//            final int batch_size = 100;
-//            //
-//            final Integer contig_id = k._1();
-//            final ArrayList<Integer> queries = k._2();
-//
-//            final int num_batches = (int)Math.ceil(queries.size() / batch_size);
-//            Integer[][] query_batches = new Integer[num_batches][batch_size + 1];
-//            for (int b = 0; b < num_batches; b++) {
-//                // for each batch, create new array to hold batch data
-//                Integer[] query_batch = new Integer[batch_size + 1];
-//                // add contig_id to head of list
-//                query_batch[0] = contig_id;
-//                // grab batch_size elements and add to query_batch
-//                for (int q = 1; q <= batch_size; q++) {
-//                    query_batch[q] = queries.get(b*batch_size + q-1);
-//                }
-//                //query_batch.addAll(queries.subList(b*batch_size, (b+1)*batch_size));
-//                // add batch to list of batches
-//                //query_batches.add(query_batch);
-//                query_batches[b] = query_batch;
-//            }
-//            return query_batches;
-//        });
+        JavaRDD<int[]> packed_query_arrays = contig_query_arrays.flatMap(k -> {
+            // batch size : number of query pairs in each array
+            final int batch_size = 100;
+            //
+            final Integer contig_id = k._1();
+            final ArrayList<Integer> queries = k._2();
+
+            final int num_batches = (int)Math.ceil(queries.size() / batch_size);
+            ArrayList<int[]> query_batches = new ArrayList<>();
+            for (int b = 0; b < num_batches; b++) {
+                // for each batch, create new array to hold batch data
+                int[] query_batch = new int[batch_size + 1];
+                // add contig_id to head of list
+                query_batch[0] = contig_id;
+                // grab batch_size elements and add to query_batch
+                for (int q = 1; q <= batch_size; q++) {
+                    query_batch[q] = queries.get(b*batch_size + q-1);
+                }
+                //query_batch.addAll(queries.subList(b*batch_size, (b+1)*batch_size));
+                // add batch to list of batches
+                //query_batches.add(query_batch);
+                query_batches.add(query_batch);
+            }
+            return query_batches.iterator();
+        });
 
 
+        System.err.println("Packed_query_arrays:");
+        System.err.println(packed_query_arrays.take(5));
 
-
-
-
-//       final List<Integer> b = accel.wrap(packed_query_arrays).map_acc(new GetOverlappingAcc(
-//                variant_start_end_bc,
-//                reach_bc,
-//                reachLength_bc,
-//                shift_bc,
-//                vs_size_bc)
-//        ).collect();
+        final ClassTag<Integer[]> integer_array_classtag = ClassTag$.MODULE$.apply(Integer[].class);
+       final int[][] b = accel.wrap(packed_query_arrays.rdd(), int_array_classtag).map_acc(new GetOverlappingAcc(
+                variant_start_end_bc,
+                reach_bc,
+                reachLength_bc,
+                shift_bc,
+                vs_size_bc),
+               int_array_classtag
+        ).collect();
 
 
 //        System.err.println("packed_query_arrays:");

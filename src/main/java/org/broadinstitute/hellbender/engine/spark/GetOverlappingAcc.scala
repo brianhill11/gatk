@@ -14,12 +14,12 @@ import org.broadinstitute.hellbender.utils.variant.GATKVariant
 
  */
 
-class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Object]],
-                        reach: BlazeBroadcast[Array[Object]],
-                        reachLength: BlazeBroadcast[Array[Object]],
-                        shift: BlazeBroadcast[Array[Object]],
-                        vs_size: BlazeBroadcast[Array[Object]])
-  extends Accelerator[Array[Integer], Array[Integer]] {
+class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Int]],
+                        reach: BlazeBroadcast[Array[Int]],
+                        reachLength: BlazeBroadcast[Array[Int]],
+                        shift: BlazeBroadcast[Array[Int]],
+                        vs_size: BlazeBroadcast[Array[Int]])
+  extends Accelerator[Array[Int], Array[Int]] {
 
   // Accelerator ID string
   val id = "GetOverlapping"
@@ -57,10 +57,10 @@ class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Object]],
    *    final_result[result_num].append(result_buffer)
    *    result_num += 1
    */
-  override def call(in: Array[Integer]) : Array[Integer] = {
+  override def call(in: Array[Int]) : Array[Int] = {
 
     val num_inputs = in.length / 3
-    val result_array = ArrayBuffer.empty[Integer]
+    val result_array = ArrayBuffer.empty[Int]
     // iterate over each query Tuple3
     for (i <- 0 until in.length by 3) {
       val query_contig = in(i)
