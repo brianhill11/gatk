@@ -22,11 +22,11 @@ class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Int]],
   extends Accelerator[Array[Int], Array[Int]] {
 
   // Accelerator ID string
-  val id = "GetOverlapping"
+  val id: String = "GetOverlapping"
 
-  override def getArgNum() = 5
+  def getArgNum() = 5
 
-  override def getArg(idx: Int): Option[_] = if (idx == 0) Some(start_end.asInstanceOf[BlazeBroadcast[Array[Int]]])
+  def getArg(idx: Int): Option[_] = if (idx == 0) Some(start_end.asInstanceOf[BlazeBroadcast[Array[Int]]])
   else if (idx == 1) Some(reach.asInstanceOf[BlazeBroadcast[Array[Int]]])
   else if (idx == 2) Some(reachLength.asInstanceOf[BlazeBroadcast[Array[Int]]])
   else if (idx == 3) Some(shift.asInstanceOf[BlazeBroadcast[Array[Int]]])
