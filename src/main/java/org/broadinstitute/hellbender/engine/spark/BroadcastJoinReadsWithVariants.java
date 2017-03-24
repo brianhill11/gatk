@@ -190,7 +190,7 @@ public final class BroadcastJoinReadsWithVariants {
         // where N is the batch size
         JavaRDD<int[]> packed_query_arrays = contig_query_arrays.flatMap(k -> {
             // batch size : number of query pairs in each array
-            final int batch_size = 100;
+            final int batch_size = 100000;
             //
             int contig_id;
             if (k._1() != null) {
@@ -234,7 +234,7 @@ public final class BroadcastJoinReadsWithVariants {
         );
 
        System.err.println("Collecting AccRDD");
-       System.err.println(b.collect());
+       System.err.println(b.collect().toString());
 
 
 //        System.err.println("packed_query_arrays:");
