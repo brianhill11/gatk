@@ -200,9 +200,10 @@ public final class BroadcastJoinReadsWithVariants {
             }
             final ArrayList<Integer> queries = k._2();
 
-            System.err.println("queries.size():" + queries.size());
+            final int n_queries = queries.size();
+            System.err.println("queries.size():" + n_queries);
             // even if we don't have a full batch, still count it as a batch
-            final int num_batches = (int)Math.max(Math.ceil(queries.size() / batch_size), 1);
+            final int num_batches = (int)(Math.ceil((float)n_queries / (float)batch_size);
             System.err.println("num_batches: " + num_batches);
             ArrayList<int[]> query_batches = new ArrayList<>();
             for (int b = 0; b < num_batches; b++) {
@@ -211,7 +212,7 @@ public final class BroadcastJoinReadsWithVariants {
                 // add contig_id to head of list
                 query_batch[0] = contig_id;
                 // grab batch_size elements and add to query_batch
-                for (int q = 1; q <= batch_size; q++) {
+                for (int q = 1; q <= batch_size && q < n_queries ; q++) {
                     query_batch[q] = queries.get(b*batch_size + q-1);
                 }
                 //query_batch.addAll(queries.subList(b*batch_size, (b+1)*batch_size));
