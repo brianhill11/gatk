@@ -208,7 +208,12 @@ public final class BroadcastJoinReadsWithVariants {
             ArrayList<int[]> query_batches = new ArrayList<>();
             for (int b = 0; b < num_batches; b++) {
                 // for each batch, create new array to hold batch data
-                int[] query_batch = new int[batch_size + 1];
+                int query_batch_size = batch_size;
+                // if this is the last iteration, num queries might be shorter than batch size
+                if (b == num_batches - 1) {
+                    query_batch_size = n_queries % batch_size;
+                }
+                int[] query_batch = new int[query_batch_size + 1];
                 // add contig_id to head of list
                 query_batch[0] = contig_id;
                 // grab batch_size elements and add to query_batch
