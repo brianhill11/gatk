@@ -212,7 +212,7 @@ public final class BroadcastJoinReadsWithVariants {
                 // add contig_id to head of list
                 query_batch[0] = contig_id;
                 // grab batch_size elements and add to query_batch
-                for (int q = 1; q <= batch_size && q < n_queries ; q++) {
+                for (int q = 1; q <= batch_size && b*batch_size + q < n_queries ; q++) {
                     query_batch[q] = queries.get(b*batch_size + q-1);
                 }
                 //query_batch.addAll(queries.subList(b*batch_size, (b+1)*batch_size));
