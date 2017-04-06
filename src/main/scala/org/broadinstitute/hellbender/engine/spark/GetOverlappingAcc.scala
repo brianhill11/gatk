@@ -1,8 +1,10 @@
 package org.broadinstitute.hellbender.engine.spark
 
+import org.apache.spark.{SparkConf, SparkContext}
+
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.break
-import org.apache.spark.blaze.{Accelerator, BlazeBroadcast}
+import org.apache.spark.blaze.{Accelerator, BlazeBroadcast, BlazeRuntime}
 import org.apache.spark.rdd.RDD
 import org.broadinstitute.hellbender.utils.variant.GATKVariant
 
@@ -59,14 +61,18 @@ class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Int]],
    */
   override def call(in: Array[Int]) : Array[Int] = {
 
-    println("Running Accel code on CPU with input array of size" + in.length)
+    println("Running Accel code on CPU with input array of size " + in.length)
     val num_inputs = in.length / 3
     val result_array = ArrayBuffer.empty[Int]
-    // iterate over each query Tuple3
-    for (i <- 0 until in.length by 3) {
-      val query_contig = in(i)
-      val query_start = in(i + 1)
-      val query_end = in(i + 2)
+
+    //the first value of the input array is the contig
+    val query_contig = in(0)
+    // append query_contig to result array as first value
+    result_array += query_contig
+    // iterate over each query Tuple2
+    for (i <- 1 until in.length by 2) {
+      val query_start = in(i)
+      val query_end = in(i + 1)
       // append overlapping intervals to result array
       result_array ++ getOverlapping(query_contig, query_start, query_end)
       // append (-1) marker to signal end of results for this query
@@ -85,7 +91,7 @@ class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Int]],
      */
     def getOverlapping(query_contig: Int, query_start: Int, query_end: Int) = {
 
-      println("calling getOverlapping with contig:" + query_contig +  " start: " + query_start + " end: " + query_end)
+      println("calling getOverlapping with contig: " + query_contig +  " start: " + query_start + " end: " + query_end)
       // append start/end pairs to array
       val output_arr = ArrayBuffer.empty[Int]
 
@@ -96,12 +102,12 @@ class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Int]],
 
       // need to add to index so that it falls within this contig
       // by adding farthest index of prev contig
-      if (query_contig > 0) idx += vs_size.data(query_contig - 1).asInstanceOf[Int]
+      if (query_contig > 0) idx += vs_size.data(query_contig - 1)
 
       // [idx, contig_size) increment by 2 every time
-      for (i <- idx until vs_size.data(query_contig).asInstanceOf[Int] by 2 ) {
-        val other_start = start_end.data(i).asInstanceOf[Int]
-        val other_end = start_end.data(i + 1).asInstanceOf[Int]
+      for (i <- idx until vs_size.data(query_contig) by 2 ) {
+        val other_start = start_end.data(i)
+        val other_end = start_end.data(i + 1)
         // they are sorted by start location, so if this one starts too late
         // then all of the others will, too.
         if (other_start > query_end) break
@@ -122,32 +128,39 @@ class GetOverlappingAcc(start_end: BlazeBroadcast[Array[Int]],
      * @returns index of bin
      */
     def firstPotentiallyReaching(position: Int, contig_idx: Int) : Int = {
-      val contig_reach_length = reachLength.data(contig_idx).asInstanceOf[Int]
+      val contig_reach_length = reachLength.data(contig_idx)
       // [0, contig_reach_length)
       for (i <- 0 until contig_reach_length) {
-        if (reach.data(contig_reach_length + i).asInstanceOf[Int] >= position) return i << shift.data(contig_idx).asInstanceOf[Int]
+        if (reach.data(contig_reach_length + i) >= position) return i << shift.data(contig_idx)
       }
       // no one reaches to the given position.
-      return vs_size.data(contig_idx).asInstanceOf[Int] - 1
+      return vs_size.data(contig_idx) - 1
     }
     result_array.toArray
   }
 
 }
 
-//object query_transformer {
-//    def create_query_array_from_GATKVariant_RDD(reads: RDD[GATKVariant], contig_index_map: Map[String, Integer]) : Array[Integer] = {
-//        val init_agg_array = ArrayBuffer.empty[Integer]
-//        val read_contig_map : RDD[(Integer, (Integer, Integer))] = reads.map(v => (contig_index_map(v.getContig), (v.getStart.asInstanceOf[Integer], v.getEnd.asInstanceOf[Integer])))
-//        // merge query positions in same contig (start, followed by end)
-//        val add_to_array = (pos_per_contig: ArrayBuffer[Integer], pos: (Integer, Integer)) => {
-//          pos_per_contig += pos._1
-//          pos_per_contig += pos._2
-//        }
-//        // merge position arrays of same contig
-//        val merge_contig_arrays = (a: ArrayBuffer[Integer], b: ArrayBuffer[Integer]) => a ++ b
-//        // aggreate by key, key = contig
-//        val aggregate_by_contig = read_contig_map.aggregateByKey(init_agg_array)(add_to_array, merge_contig_arrays)
-//        println(aggregate_by_contig)
-//    }
-//}
+
+/*
+object GetOverlappingAcc {
+  def main(args: Array[String]): Unit = {
+    val conf = new SparkConf()
+    conf.setAppName("GetOverlapping")
+
+    val sc = new SparkContext(conf)
+    val acc = new BlazeRuntime(sc)
+
+    // number of test queries
+    val num_queries = 300
+    // number of test contigs
+    val num_contigs = 23
+    // max number of test intervals per contig to compare against
+    val max_num_intervals = 10000
+    // min_number of test intervals per contig to compare against
+    val min_num_intervals = 100
+
+
+
+  }
+}*/

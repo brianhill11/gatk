@@ -201,7 +201,7 @@ public final class BroadcastJoinReadsWithVariants {
             final ArrayList<Integer> queries = k._2();
 
             final int n_queries = queries.size();
-            System.err.println("queries.size():" + n_queries);
+            System.err.println("queries.size(): " + n_queries);
             // even if we don't have a full batch, still count it as a batch
             final int num_batches = (int)(Math.ceil((float)n_queries / (float)batch_size));
             System.err.println("num_batches: " + num_batches);
